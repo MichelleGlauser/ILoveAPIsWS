@@ -1,0 +1,138 @@
+I <3 APIs Conf PhoneGap Workshop
+
+An HTTP web server itself can't talk to a database. Middleware (PHP, .NET, Cold Fusion, JSP, etc.) does that.
+
+No server-side page generation (the UI of the app  must be present in the app—it can't be dynamically generated and injected). 
+
+Geolocation, push notifications, etc. need to be used via BaaS (back end as a service). It's like a database in the cloud that you can call directly from your call directly. It's like iCloud or Skydrive to synchronize all your app data across users and devices. 
+
+Usergrid is Apache's
+
+Free hosted accounts
+25 GB storage limit,
+10 M push notifs/mo
+no API/bandwidth limit
+Commercial use okay
+
+Free OSS version
+git.io/usergrid
+
+
+Log in to apigee and go to http://apigee.com/appservices/#!/org-overview
+
+Make sure the dropdowns on the left have the correct org and app.
+"Sandbox" is not secure. Do not put any secure data in a sandbox app.
+
+Creating a new app means you have to unlock it to develop it.
+
+In our app, we have users, groups, and roles (see "Users" in the left-hand sidebar).
+
+Monitoring will notify you when your app crashes.
+
+Push notifications are in the "push" section.
+
+Relational databases (like SQL) have tables instead of collections (like NoSQL). NoSQL is a box that can hold whatever, whether they have something in common or not.
+
+
+
+Create new data collection "/items", create new JSON item. Be careful not to use "name" because is tied to encrypted UID.
+
+View details to see created time: the bigger the number, the newer it is. 
+Find things in the database using the path.
+
+To add more sub-items records, create an array.
+
+Don't miss commas. 
+[{
+  "title": "Make orzo pasta",
+  "place": "San Francisco"
+},
+{
+  "title": "Make orzo pasta",
+  "place": "San Francisco"
+},
+{
+  "title": "Visit Hawai'i",
+  "place": "Hawai'i"
+}]
+
+Clicking on the collection name automatically reads the items for you.You don't need the update button, either. Go to "edit entity" in the details and change what you want to change and click on save (though you can't change the automatically-generated objects). You can even add new fields there (it's NoSQL, they don't have to match).
+
+This is already an API: http://api.usergrid.com/michelleglauserapis/sandbox/items
+
+(Use Apigee username.)
+
+At this point there's no security; anyone can see your API.
+
+You can even post to the API using curl -X PUT http://api.usergrid.com/michelleglauserapis/sandbox/items/e932a51a-391e-11e4-92cb-a5cd1acc2c19 -d '{"place":"Rome, Italy"}'
+
+Apigee SDKs available for JS, Node, iOS, Android, Ruby, C#
+
+
+
+Paste code from https://raw.githubusercontent.com/garazi/apigee-bucketlist/master/js/apigee.js into file, save in js file as apigee.js
+
+Add script src for apigee.js to index.html. Add the script in the HTML from here: https://github.com/apigee/apigee-javascript-sdk#app-services-getting-started to the end of the scripts.
+
+Apigee is usergrid in the cloud. Add your apigee orgname (and app name if not Sandbox) to the script.
+
+Change "books" var to match your collection (items). So:
+
+  var client = new Apigee.Client({
+                orgName:'michelleglauserapis', // Your Apigee.com username for App Services
+                appName:'sandbox' // Your Apigee App Services app name
+            });
+
+            // Reading data — does a GET on items
+            var items = new Apigee.Collection({ "client":client, "type":"items" });
+            items.fetch(
+                function(err, data) { // Success
+                    if (err) {
+                        alert("read failed");
+                    } else {
+                        while(items.hasNextEntity()) {
+                            var item = items.getNextEntity();
+                            alert(item.get("title")); // Output the title of the item
+                        }
+                    }
+                });
+
+
+Catch up code:
+j.mp/apigee-v3-list
+
+How to deal with offline storage?
+
+Cookies are bad, but W3C deprecated SQLite. We can use IndexDB that W3C approved. It's in the browser, on mobile phones except for iPhones (so far). So, leftover: Write a file onto the device (sketchy). LocalStorage stores data on the device in a place that only the browser knows about (works across mobile and web apps). 
+
+
+Always add a spinner or other distraction when something might take longer than you think. 
+
+In Dev Tools in Network, you can see how fast something has loaded and if it's loaded at all. 
+
+Go to DevTools, go to Resources, go to localStorage and file://. You can see what is being saved from the page. A domain can't see the LocalStorage of another domain. 
+
+
+Add $('#bucketlist').html(localStorage.getItem('items')); after the alert and localStorage.setItem('items', $('#bucketlist').html()); after the while loop closes. 
+
+
+Turn wifi off and refresh to see that localStorage saved it for you. Only text can be saved in localStorage, and the limit is 5 MB. Images can be put in there if they're base-64 encoded. LocalStorage remains until you delete it, even in private windows.
+
+Currently here: https://raw.githubusercontent.com/garazi/apigee-bucketlist/master_v3/04-index-localstorage.html
+
+
+In query in the apigee.com appservices, you can type: select * where title contains 'flips' OR title contains 'naked' (this is CQL for "cassandra")
+
+The limit to objects is 999.
+
+
+For geolocation:
+
+-your objects must have a location. 
+{
+	"title": "Visit Taj Mahal",
+	"location": {
+		"latitude": "27.1742",
+		"longitude": "78.0422"
+	}
+}

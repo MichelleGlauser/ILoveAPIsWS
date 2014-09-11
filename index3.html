@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+<head>
+    <title>jQuery Mobile Page</title>
+    <meta charset="utf-8">
+    <!-- vital to 100% screen width (and user can't pinch and zoom) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!-- Two tags allow phone bookmarking and launching without browser bar so it looks like an app: -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Fonts -->
+    <link rel="stylesheet" href="css/font-awesome.min.css" />
+    <link rel="stylesheet" href="css/font/roboto-regular.css" />
+
+    <!-- jQueryMobileCSS - original with styling (Greg doesn't like jQueryMobileCSS, so he writes his own CSS-->
+    <!-- <link rel="stylesheet" href="css/jquery.mobile-1.3.1.min.css" /> -->
+
+    <!-- jQueryMobileCSS Structure - original without styling -->
+    <link rel="stylesheet" href="css/jquery.mobile.structure-1.3.1.min.css" />
+
+    <!-- Custom styling including overrides to the jQueryMobile structure CSS -->
+    <link href="css/bucketlist.css" rel="stylesheet">
+
+    <!-- jQuery and jQueryMobile libraries -->
+    <script src="js/jquery-1.9.1.min.js"></script>
+    <script src="js/jquery.mobile-1.3.1.min.js"></script>
+    <script src="js/apigee.js"></script>
+    <script type="text/javascript">
+    // document ready
+    $(function() {
+            // Initializing the SDK — creating the API URL:
+            var client = new Apigee.Client({
+                orgName:'michelleglauserapis', // Your Apigee.com username for App Services
+                appName:'sandbox' // Your Apigee App Services app name
+            });
+
+            // Reading data — does a GET on items
+            var items = new Apigee.Collection({ "client":client, "type":"items" });
+            function populateList(items) {
+                // delete existing list items with jQuery function  .empty()
+                    $('#bucketlist').empty();
+                    while(items.hasNextEntity()) {
+                        var item = items.getNextEntity();
+                        // will look for key called "title" and return its record
+                        $("#bucketlist").append('<li><a href="#page-add">' + item.get("title") + '</a></li>');
+                        // alert(item.get("title")); // Output the title of the item
+                    }
+                    // "refresh" is a jQuery Mobile listview method (the only one, actually) so the items get added after the DOM has loaded
+                    $('#bucketlist').listview('refresh');
+            }
+            // the whole script has been read, so it's okay to call this function first:
+            loadItems();
+            function loadItems () {
+               items.fetch(
+                function(err, data) { // Success
+                    if (err) {
+                        alert("read failed");
+                        // restoreCollection checks all of them, so the pointer is at the bottom
+                        items = client.restoreCollection(localStorage.getItem('items'));
+                        // bring pointer for list of items back to the top
+                        items.resetEntityPointer();
+                        // $('#bucketlist').html(localStorage.getItem('items'));
+                        populateList(items);
+                    } else {
+                        populateList(items);
+                        // write the data into LocalStorage for offline after retrieval and displaying (the docs say to create first, but it figures out to create it by calling it. All the API response data will be saved via items.serialize():
+                        localStorage.setItem('items', items.serialize());
+                    }
+                });
+ 
+            }
+            
+            $('#form-add-item').on('click', '#btn-submit', function () {
+                if ($('#form-title').val() !=== '') {
+                    var newItem = {
+                        "title": $('#form-title').val(),
+                        "place": $('#form-place').val(),
+                        "desc": $('#form-desc').val()
+                }
+                items.addEntity(newItem, function (err, response) {
+                    if (err) {
+                        alert('oops')
+                    }
+                    // find the input and textarea and set the value to a blank string to wipe out values (make sure you either don't have other inputs or textareas, or go by IDs or classes)
+                    else {
+                        $('#form-title').val('');
+                        $('#form-place').val('');
+                        $('#form-desc').val('');
+                        loadItems();
+                        window.location = "#page-main";
+                        // $('input, textarea').val('');
+                        // // pull items again
+                        // loadItems();
+                    }
+                }
+            })
+            $('form').on('click', '#btn-clear, #btn-cancel', function() {
+                $('input').each(function () {
+                    $(this).val('');
+            });
+        });
+
+            // Uncomment the next 4 lines if you want to write data
+
+            // book = { "title": "the old man and the sea" };
+            // use addEntity method using book variable:
+            // books.addEntity(book, function (error, response) {
+            //  if (error) { alert("write failed");
+            //  } else { alert("write succeeded"); } });
+
+    })
+    </script>
+</head>
+
+<body>
+<!-- first data-role=page will be first page -->
+    <section id="page-main" data-role="page">
+        <header id="header-mylist" data-role="header" data-position="fixed" data-theme="a">
+            <a id="btn-new" data-role="button" data-icon="plus" data-iconpos="right" data-inline="true" href="#page-add" class="ui-btn-right">New</a>
+            <h1>My Bucket List</h1>
+        </header>
+        <!-- /header -->
+        <article data-role="content" id="contentlist">
+            <ul data-role="listview" id="bucketlist" class="mybucketlist">
+                <li><a href="#page-add">My first bucketlist item</a></li>
+                <li><a href="#page-add">Another bucklist item</a></li>
+                <li><a href="#page-add">A third thing on my bucketlist</a></li>
+            </ul>
+        </article>
+        <!-- /content -->
+        <footer data-role="footer" data-position="fixed" id="app-nav">
+            <div data-role="navbar" data-iconpos="top" data-theme="c">
+                <ul>
+                    <li>
+                        <a id="btn-load-mylist" href="#page-main" data-transition="fade" data-theme="c" data-icon="edit">
+                      My List
+                  </a>
+                    </li>
+                    <li>
+                        <a id="btn-load-inspiration" href="#page-main" data-transition="fade" data-theme="c" data-icon="list">
+                      Inspiration
+                  </a>
+                    </li>
+                </ul>
+            </div>
+        </footer>
+        <!-- /footer -->
+    </section>
+    <!-- data-role page signifies that the following code is its own page-sized section -->
+    <section id="page-add" data-role="page" data-add-back-btn="true" >
+        <header data-role="header" data-theme="a">
+            <h1>Add Item</h1>
+        </header>
+        <!-- /header -->
+        <article data-role="content">
+            <form action="" id="form-add-item" class="" style="">
+                <label for="form-title">What is on your Bucketlist?</label>
+                <input id="form-title" type="text" placeholder="I am going to..." />
+                <label for="form-place">Where in the world?</label>
+                <input id="form-place" type="text" placeholder="Somewhere in the world..." />
+                <label for="form-desc">More Info:</label>
+                <textarea name="" id="form-desc" placeholder="Add any additional information here..."></textarea>
+                <input id="form-uuid" type="hidden" />
+                <a id="btn-cancel" data-role="button" data-icon="delete" href="#page-main">Cancel</a>
+                <a id="btn-submit" data-role="button" data-icon="plus" href="#page-main">Submit</a>
+            </form>
+        </article>
+        <!-- /content -->
+    </section>
+</body>
+
+</html>
